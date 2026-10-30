@@ -91,7 +91,6 @@ button {
 button:hover { border-color: #8dbb99; background: #f2f8f2; }
 button:disabled { opacity: .65; cursor: wait; }
 .logout button { margin-top: 0; }
-.login-leave { margin-top: 18px; }
 .error { color: #a33131; font-size: 14px; }
 
 nav {
