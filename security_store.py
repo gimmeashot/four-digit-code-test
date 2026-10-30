@@ -22,7 +22,12 @@ def state_db():
     db = sqlite3.connect(STATE_DB_PATH, timeout=5)
     try:
         db.execute(
-            "CREATE TABLE IF NOT EXISTS login_attempts (created_at REAL NOT NULL)"
+            "CREATE TABLE IF NOT EXISTS login_attempts_by_client "
+            "(client_key TEXT NOT NULL, created_at REAL NOT NULL)"
+        )
+        db.execute(
+            "CREATE INDEX IF NOT EXISTS login_attempts_client_time "
+            "ON login_attempts_by_client (client_key, created_at)"
         )
         db.execute(
             "CREATE TABLE IF NOT EXISTS view_tokens (token_hash TEXT PRIMARY KEY, expires_at REAL NOT NULL)"
@@ -32,17 +37,27 @@ def state_db():
         db.close()
 
 
-def allow_login_attempt():
+def allow_login_attempt(client_ip):
     now = time.time()
+    client_key = hashlib.sha256(client_ip.encode()).hexdigest()
     with state_db() as db:
         with db:
             # блокировка делает подсчёт попыток атомарным
             db.execute("BEGIN IMMEDIATE")
-            db.execute("DELETE FROM login_attempts WHERE created_at <= ?", (now - LOGIN_WINDOW_SECONDS,))
-            count = db.execute("SELECT COUNT(*) FROM login_attempts").fetchone()[0]
+            db.execute(
+                "DELETE FROM login_attempts_by_client WHERE created_at <= ?",
+                (now - LOGIN_WINDOW_SECONDS,),
+            )
+            count = db.execute(
+                "SELECT COUNT(*) FROM login_attempts_by_client WHERE client_key = ?",
+                (client_key,),
+            ).fetchone()[0]
             if count >= MAX_LOGIN_ATTEMPTS:
                 return False
-            db.execute("INSERT INTO login_attempts (created_at) VALUES (?)", (now,))
+            db.execute(
+                "INSERT INTO login_attempts_by_client (client_key, created_at) VALUES (?, ?)",
+                (client_key, now),
+            )
             return True
 
 

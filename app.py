@@ -1,6 +1,7 @@
 """генератор четырёхзначного кода"""
 
 import hmac
+import ipaddress
 import os
 import secrets
 
@@ -21,6 +22,12 @@ app.config.update(
     SESSION_COOKIE_SAMESITE="Lax",
     SESSION_COOKIE_SECURE=bool(os.environ.get("RENDER")),
 )
+
+
+@app.before_request
+def clear_legacy_private_code():
+    # удаляем код из старых cookie сессии
+    session.pop("last_private_code", None)
 
 
 def new_code(previous=None):
@@ -70,7 +77,7 @@ def api_code():
 def private_code():
     if request.method == "POST":
         revoke_view_token(session.pop("view_token", None))
-        if not allow_login_attempt():
+        if not allow_login_attempt(login_client_ip()):
             return (
                 render_template("login.html", error="Слишком много попыток. Повторите через минуту"),
                 429,
@@ -88,10 +95,19 @@ def private_code():
 
     # разрешение действует только на один показ
     if consume_view_token(session.pop("view_token", None)):
-        code = new_code(session.get("last_private_code"))
-        session["last_private_code"] = code
-        return render_template("code.html", code=code, private=True)
+        return render_template("code.html", code=new_code(), private=True)
     return render_template("login.html", error=None)
+
+
+def login_client_ip():
+    if os.environ.get("RENDER"):
+        # render получает адрес клиента от cloudflare
+        candidate = request.headers.get("CF-Connecting-IP", "")
+        try:
+            return str(ipaddress.ip_address(candidate))
+        except ValueError:
+            pass
+    return request.remote_addr or "unknown"
 
 
 @app.post("/logout")

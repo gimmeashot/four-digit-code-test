@@ -111,6 +111,47 @@ class CodeServiceTests(unittest.TestCase):
                 allowed = self.client.post("/private", data={"username": "demo", "password": "test-pass"})
                 self.assertEqual(allowed.status_code, 303)
 
+    def test_one_client_cannot_block_another_client(self):
+        with patch.dict(os.environ, {"APP_USERNAME": "demo", "APP_PASSWORD": "test-pass", "RENDER": "true"}):
+            attacker = app.test_client()
+            visitor = app.test_client()
+            for _ in range(10):
+                response = attacker.post(
+                    "/private",
+                    data={"username": "demo", "password": "wrong"},
+                    headers={"CF-Connecting-IP": "198.51.100.10"},
+                )
+                self.assertEqual(response.status_code, 401)
+            blocked = attacker.post(
+                "/private",
+                data={"username": "demo", "password": "test-pass"},
+                headers={"CF-Connecting-IP": "198.51.100.10"},
+            )
+            self.assertEqual(blocked.status_code, 429)
+            allowed = visitor.post(
+                "/private",
+                data={"username": "demo", "password": "test-pass"},
+                headers={"CF-Connecting-IP": "198.51.100.11"},
+            )
+            self.assertEqual(allowed.status_code, 303)
+
+    def test_private_code_is_not_stored_in_cookie(self):
+        with patch.dict(os.environ, {"APP_USERNAME": "demo", "APP_PASSWORD": "test-pass"}):
+            self.client.get("/public")
+            self.client.post("/private", data={"username": "demo", "password": "test-pass"})
+            shown = self.client.get("/private")
+            code = extract_code(shown)
+            cookie = self.client.get_cookie("session").value
+            contents = app.session_interface.get_signing_serializer(app).loads(cookie)
+            self.assertNotIn("last_private_code", contents)
+
+            with self.client.session_transaction() as old_session:
+                old_session["last_private_code"] = code
+            self.client.get("/private")
+            cookie = self.client.get_cookie("session").value
+            contents = app.session_interface.get_signing_serializer(app).loads(cookie)
+            self.assertNotIn("last_private_code", contents)
+
     def test_non_ascii_login_input_does_not_crash(self):
         with patch.dict(os.environ, {"APP_USERNAME": "demo", "APP_PASSWORD": "test-pass"}):
             for username, password in [("тест", "x"), ("demo", "пароль")]:
