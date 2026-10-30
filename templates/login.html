@@ -19,7 +19,9 @@
       <input id="password" name="password" type="password" required>
       <button type="submit">Войти и получить код</button>
     </form>
-    <nav><a href="{{ url_for('public_code') }}">Открытая страница</a></nav>
+    <form class="logout login-leave" method="get" action="{{ url_for('public_code') }}">
+      <button type="submit">Выйти</button>
+    </form>
   </main>
 </body>
 </html>

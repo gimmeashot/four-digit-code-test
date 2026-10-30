@@ -92,6 +92,7 @@ button:hover { background: #205a33; }
 button:disabled { opacity: .65; cursor: wait; }
 .logout button { margin-top: 0; background: #fff; color: #286a3d; }
 .logout button:hover { background: #f2f8f2; }
+.login-leave { margin-top: 18px; }
 .error { color: #a33131; font-size: 14px; }
 
 nav {
