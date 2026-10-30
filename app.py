@@ -73,5 +73,11 @@ def private_code():
     return render_template("login.html", error=None)
 
 
+@app.post("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("private_code"), code=303)
+
+
 if __name__ == "__main__":
     app.run(debug=False)

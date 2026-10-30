@@ -12,7 +12,10 @@
     <h1>Ваш код</h1>
     <div class="code" id="code" aria-label="Четырёхзначный код" aria-live="polite">{{ code }}</div>
     {% if private %}
-    <p class="hint">Обновите страницу, чтобы выйти.</p>
+    <p class="hint">Обновление страницы также завершит вход.</p>
+    <form class="logout" method="post" action="{{ url_for('logout') }}">
+      <button type="submit">Выйти</button>
+    </form>
     {% else %}
     <p class="hint">Нажмите кнопку, чтобы получить новый случайный код.</p>
     <button type="button" id="refresh-code" data-url="{{ url_for('api_code') }}">Обновить код</button>

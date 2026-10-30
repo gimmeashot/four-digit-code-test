@@ -48,11 +48,22 @@ class CodeServiceTests(unittest.TestCase):
             self.assertEqual(login.status_code, 303)
             shown = self.client.get(login.headers["Location"])
             self.assertRegex(extract_code(shown), r"^\d{4}$")
+            self.assertIn("Выйти".encode(), shown.data)
 
             refreshed = self.client.get("/private")
             self.assertEqual(refreshed.status_code, 200)
             self.assertIsNone(extract_code(refreshed))
             self.assertIn("Вход".encode(), refreshed.data)
+
+    def test_logout_button_returns_to_login(self):
+        with patch.dict(os.environ, {"APP_USERNAME": "demo", "APP_PASSWORD": "test-pass"}):
+            self.client.post("/private", data={"username": "demo", "password": "test-pass"})
+            self.client.get("/private")
+            result = self.client.post("/logout", follow_redirects=True)
+            self.assertEqual(result.status_code, 200)
+            self.assertIsNone(extract_code(result))
+            self.assertIn("Вход".encode(), result.data)
+            self.assertIsNone(extract_code(self.client.get("/private")))
 
 
 if __name__ == "__main__":
