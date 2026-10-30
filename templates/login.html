@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Вход · Четырёхзначный код</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <main class="card">
+    <p class="eyebrow">Задание 2 · После входа</p>
+    <h1>Вход</h1>
+    <p class="hint">Введите логин и пароль, чтобы получить код.</p>
+    {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
+    <form method="post" action="{{ url_for('private_code') }}" autocomplete="off">
+      <label for="username">Логин</label>
+      <input id="username" name="username" required autofocus>
+      <label for="password">Пароль</label>
+      <input id="password" name="password" type="password" required>
+      <button type="submit">Войти и получить код</button>
+    </form>
+    <nav><a href="{{ url_for('public_code') }}">Открытая страница</a></nav>
+  </main>
+</body>
+</html>

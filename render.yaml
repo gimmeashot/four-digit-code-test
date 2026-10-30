@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: four-digit-code-demo
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: APP_USERNAME
+        value: demo
+      - key: APP_PASSWORD
+        sync: false
