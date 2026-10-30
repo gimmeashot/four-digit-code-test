@@ -13,6 +13,7 @@ button.addEventListener("click", async () => {
     });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
+    // показываем только корректный четырёхзначный код
     if (!/^\d{4}$/.test(data.code)) throw new Error("Invalid code");
     code.textContent = data.code;
   } catch {

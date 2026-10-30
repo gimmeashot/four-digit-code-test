@@ -8,6 +8,7 @@ from flask import Flask, jsonify, redirect, render_template, request, session, u
 
 
 app = Flask(__name__)
+# ключ подписывает cookie сессии
 app.secret_key = os.environ.get("SECRET_KEY") or secrets.token_hex(32)
 app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
@@ -20,6 +21,7 @@ def new_code(previous=None):
     """код с ведущими нулями без повтора"""
     if previous is None:
         return f"{secrets.randbelow(10_000):04d}"
+    # исключаем предыдущий код из диапазона
     number = secrets.randbelow(9_999)
     if number >= int(previous):
         number += 1
@@ -48,6 +50,7 @@ def public_code():
 
 def next_public_code():
     code = new_code(session.get("last_public_code"))
+    # сохраняем код для исключения повтора
     session["last_public_code"] = code
     return code
 
@@ -60,6 +63,7 @@ def api_code():
 @app.route("/private", methods=["GET", "POST"])
 def private_code():
     if request.method == "POST":
+        # сбрасываем прежнее разрешение перед входом
         session.pop("can_view_code", None)
         username = os.environ.get("APP_USERNAME", "demo")
         password = os.environ.get("APP_PASSWORD")
@@ -71,6 +75,7 @@ def private_code():
             return redirect(url_for("private_code"), code=303)
         return render_template("login.html", error="Неверный логин или пароль"), 401
 
+    # разрешение действует только на один показ
     if session.pop("can_view_code", False):
         code = new_code(session.get("last_private_code"))
         session["last_private_code"] = code
