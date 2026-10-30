@@ -5,6 +5,12 @@ import os
 import secrets
 
 from flask import Flask, jsonify, redirect, render_template, request, session, url_for
+from security_store import (
+    allow_login_attempt,
+    consume_view_token,
+    issue_view_token,
+    revoke_view_token,
+)
 
 
 app = Flask(__name__)
@@ -63,20 +69,25 @@ def api_code():
 @app.route("/private", methods=["GET", "POST"])
 def private_code():
     if request.method == "POST":
-        # сбрасываем прежнее разрешение перед входом
-        session.pop("can_view_code", None)
+        revoke_view_token(session.pop("view_token", None))
+        if not allow_login_attempt():
+            return (
+                render_template("login.html", error="Слишком много попыток. Повторите через минуту"),
+                429,
+                {"Retry-After": "60"},
+            )
         username = os.environ.get("APP_USERNAME", "demo")
         password = os.environ.get("APP_PASSWORD")
         valid = bool(password) and hmac.compare_digest(
-            request.form.get("username", ""), username
-        ) and hmac.compare_digest(request.form.get("password", ""), password)
+            request.form.get("username", "").encode(), username.encode()
+        ) and hmac.compare_digest(request.form.get("password", "").encode(), password.encode())
         if valid:
-            session["can_view_code"] = True
+            session["view_token"] = issue_view_token()
             return redirect(url_for("private_code"), code=303)
         return render_template("login.html", error="Неверный логин или пароль"), 401
 
     # разрешение действует только на один показ
-    if session.pop("can_view_code", False):
+    if consume_view_token(session.pop("view_token", None)):
         code = new_code(session.get("last_private_code"))
         session["last_private_code"] = code
         return render_template("code.html", code=code, private=True)
@@ -85,6 +96,7 @@ def private_code():
 
 @app.post("/logout")
 def logout():
+    revoke_view_token(session.get("view_token"))
     session.clear()
     return redirect(url_for("private_code"), code=303)
 

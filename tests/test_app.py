@@ -1,6 +1,7 @@
 import os
 import re
 import unittest
+import uuid
 from unittest.mock import patch
 
 from app import app, new_code
@@ -13,7 +14,15 @@ def extract_code(response):
 
 class CodeServiceTests(unittest.TestCase):
     def setUp(self):
+        self.state_file = os.path.join(os.path.dirname(__file__), "..", ".state", f"test-{uuid.uuid4().hex}.sqlite3")
+        self.state_path = patch("security_store.STATE_DB_PATH", self.state_file)
+        self.state_path.start()
         self.client = app.test_client()
+
+    def tearDown(self):
+        self.state_path.stop()
+        if os.path.exists(self.state_file):
+            os.remove(self.state_file)
 
     def test_menu_links_to_both_code_flows(self):
         menu = self.client.get("/")
@@ -71,6 +80,46 @@ class CodeServiceTests(unittest.TestCase):
             self.assertIsNone(extract_code(result))
             self.assertIn("Вход".encode(), result.data)
             self.assertIsNone(extract_code(self.client.get("/private")))
+
+    def test_saved_login_cookie_cannot_reopen_code(self):
+        with patch.dict(os.environ, {"APP_USERNAME": "demo", "APP_PASSWORD": "test-pass"}):
+            self.client.post("/private", data={"username": "demo", "password": "test-pass"})
+            saved_cookie = self.client.get_cookie("session").value
+            self.assertIsNotNone(extract_code(self.client.get("/private")))
+
+            replay = app.test_client()
+            replay.set_cookie("session", saved_cookie)
+            self.assertIsNone(extract_code(replay.get("/private")))
+
+            self.client.post("/private", data={"username": "demo", "password": "test-pass"})
+            pending_cookie = self.client.get_cookie("session").value
+            self.client.post("/logout")
+            replay.set_cookie("session", pending_cookie)
+            self.assertIsNone(extract_code(replay.get("/private")))
+
+    def test_login_attempts_are_limited(self):
+        with patch.dict(os.environ, {"APP_USERNAME": "demo", "APP_PASSWORD": "test-pass"}):
+            with patch("security_store.time.time", return_value=1000):
+                for _ in range(10):
+                    response = self.client.post("/private", data={"username": "demo", "password": "wrong"})
+                    self.assertEqual(response.status_code, 401)
+                blocked = self.client.post("/private", data={"username": "demo", "password": "test-pass"})
+                self.assertEqual(blocked.status_code, 429)
+                self.assertEqual(blocked.headers["Retry-After"], "60")
+
+            with patch("security_store.time.time", return_value=1061):
+                allowed = self.client.post("/private", data={"username": "demo", "password": "test-pass"})
+                self.assertEqual(allowed.status_code, 303)
+
+    def test_non_ascii_login_input_does_not_crash(self):
+        with patch.dict(os.environ, {"APP_USERNAME": "demo", "APP_PASSWORD": "test-pass"}):
+            for username, password in [("тест", "x"), ("demo", "пароль")]:
+                response = self.client.post("/private", data={"username": username, "password": password})
+                self.assertEqual(response.status_code, 401)
+
+        with patch.dict(os.environ, {"APP_USERNAME": "тест", "APP_PASSWORD": "пароль"}):
+            response = self.client.post("/private", data={"username": "тест", "password": "пароль"})
+            self.assertEqual(response.status_code, 303)
 
 
 if __name__ == "__main__":
