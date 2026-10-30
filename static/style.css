@@ -77,21 +77,20 @@ input:focus-visible, button:focus-visible, a:focus-visible {
 
 button {
   margin-top: 4px;
-  padding: 11px 16px;
-  border: 1px solid #286a3d;
+  padding: 10px 15px;
+  border: 1px solid #b8cbbb;
   border-radius: 6px;
-  background: #286a3d;
-  color: #fff;
+  background: #fff;
+  color: #286a3d;
   font: inherit;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
 }
 
-button:hover { background: #205a33; }
+button:hover { border-color: #8dbb99; background: #f2f8f2; }
 button:disabled { opacity: .65; cursor: wait; }
-.logout button { margin-top: 0; background: #fff; color: #286a3d; }
-.logout button:hover { background: #f2f8f2; }
+.logout button { margin-top: 0; }
 .login-leave { margin-top: 18px; }
 .error { color: #a33131; font-size: 14px; }
 
@@ -106,21 +105,16 @@ a { color: #286a3d; text-underline-offset: 3px; }
 a:hover { color: #174d29; }
 
 .menu .hint { margin: 0 0 22px; }
-.choice-list { display: grid; gap: 10px; }
+.choice-list { display: grid; border-top: 1px solid #e5eee6; }
 
 .choice {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 18px;
-  padding: 16px;
-  border: 1px solid #d8e5da;
-  border-radius: 6px;
+  display: block;
+  padding: 15px 0;
+  border-bottom: 1px solid #e5eee6;
   color: #20382a;
   text-decoration: none;
 }
 
-.choice:hover { border-color: #8dbb99; background: #f2f8f2; color: #20382a; }
+.choice:hover { color: #286a3d; }
 .choice strong { display: block; font-size: 15px; font-weight: 600; }
 .choice small { display: block; margin-top: 3px; color: #5d7162; font-size: 13px; }
-.arrow { color: #286a3d; font-size: 20px; line-height: 1; }
