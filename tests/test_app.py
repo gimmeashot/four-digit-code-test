@@ -15,16 +15,23 @@ class CodeServiceTests(unittest.TestCase):
     def setUp(self):
         self.client = app.test_client()
 
+    def test_menu_links_to_both_code_flows(self):
+        menu = self.client.get("/")
+        self.assertEqual(menu.status_code, 200)
+        self.assertIsNone(extract_code(menu))
+        self.assertIn(b'href="/public"', menu.data)
+        self.assertIn(b'href="/private"', menu.data)
+
     def test_public_refresh_changes_four_digit_code(self):
-        first = self.client.get("/")
-        second = self.client.get("/")
+        first = self.client.get("/public")
+        second = self.client.get("/public")
         self.assertRegex(extract_code(first), r"^\d{4}$")
         self.assertRegex(extract_code(second), r"^\d{4}$")
         self.assertNotEqual(extract_code(first), extract_code(second))
         self.assertIn("no-store", second.headers["Cache-Control"])
 
     def test_public_button_requests_new_code(self):
-        page = self.client.get("/")
+        page = self.client.get("/public")
         self.assertIn("Обновить код".encode(), page.data)
         self.assertNotIn("Задание".encode(), page.data)
         refreshed = self.client.post("/api/code")

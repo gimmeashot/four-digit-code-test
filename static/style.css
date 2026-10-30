@@ -104,3 +104,23 @@ nav {
 
 a { color: #286a3d; text-underline-offset: 3px; }
 a:hover { color: #174d29; }
+
+.menu .hint { margin: 0 0 22px; }
+.choice-list { display: grid; gap: 10px; }
+
+.choice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 16px;
+  border: 1px solid #d8e5da;
+  border-radius: 6px;
+  color: #20382a;
+  text-decoration: none;
+}
+
+.choice:hover { border-color: #8dbb99; background: #f2f8f2; color: #20382a; }
+.choice strong { display: block; font-size: 15px; font-weight: 600; }
+.choice small { display: block; margin-top: 3px; color: #5d7162; font-size: 13px; }
+.arrow { color: #286a3d; font-size: 20px; line-height: 1; }

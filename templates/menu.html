@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Получить код</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <main class="card menu">
+    <p class="eyebrow">Генератор кодов</p>
+    <h1>Получить код</h1>
+    <p class="hint">Выберите способ получения.</p>
+    <div class="choice-list">
+      <a class="choice" href="{{ url_for('public_code') }}">
+        <span><strong>Без входа</strong><small>Код доступен сразу</small></span>
+        <span class="arrow" aria-hidden="true">→</span>
+      </a>
+      <a class="choice" href="{{ url_for('private_code') }}">
+        <span><strong>С авторизацией</strong><small>Нужны логин и пароль</small></span>
+        <span class="arrow" aria-hidden="true">→</span>
+      </a>
+    </div>
+  </main>
+</body>
+</html>

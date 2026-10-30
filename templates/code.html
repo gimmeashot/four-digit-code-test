@@ -22,13 +22,7 @@
     <p class="error" id="refresh-error" role="alert" hidden>Не удалось обновить код. Попробуйте ещё раз.</p>
     <script src="{{ url_for('static', filename='public-code.js') }}" defer></script>
     {% endif %}
-    <nav>
-      {% if private %}
-      <a href="{{ url_for('public_code') }}">Открытая страница</a>
-      {% else %}
-      <a href="{{ url_for('private_code') }}">Страница с входом</a>
-      {% endif %}
-    </nav>
+    <nav><a href="{{ url_for('home') }}">К выбору способа</a></nav>
   </main>
 </body>
 </html>

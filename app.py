@@ -36,6 +36,11 @@ def disable_cache(response):
 
 
 @app.get("/")
+def home():
+    return render_template("menu.html")
+
+
+@app.get("/public")
 def public_code():
     code = next_public_code()
     return render_template("code.html", code=code, private=False)
