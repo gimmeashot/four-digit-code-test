@@ -1,10 +1,10 @@
-"""Two small four-digit-code demos."""
+"""генератор четырёхзначного кода"""
 
 import hmac
 import os
 import secrets
 
-from flask import Flask, redirect, render_template, request, session, url_for
+from flask import Flask, jsonify, redirect, render_template, request, session, url_for
 
 
 app = Flask(__name__)
@@ -17,7 +17,7 @@ app.config.update(
 
 
 def new_code(previous=None):
-    """Keep leading zeroes and avoid repeating the previous visible code."""
+    """код с ведущими нулями без повтора"""
     if previous is None:
         return f"{secrets.randbelow(10_000):04d}"
     number = secrets.randbelow(9_999)
@@ -28,7 +28,7 @@ def new_code(previous=None):
 
 @app.after_request
 def disable_cache(response):
-    # A refresh must request a new page, and Back must not reveal an old code.
+    # запрет кэша для нового кода и выхода при обновлении
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, private"
     response.headers["Pragma"] = "no-cache"
     response.headers["Expires"] = "0"
@@ -37,9 +37,19 @@ def disable_cache(response):
 
 @app.get("/")
 def public_code():
+    code = next_public_code()
+    return render_template("code.html", code=code, private=False)
+
+
+def next_public_code():
     code = new_code(session.get("last_public_code"))
     session["last_public_code"] = code
-    return render_template("code.html", code=code, private=False)
+    return code
+
+
+@app.post("/api/code")
+def api_code():
+    return jsonify(code=next_public_code())
 
 
 @app.route("/private", methods=["GET", "POST"])

@@ -8,10 +8,17 @@
 </head>
 <body>
   <main class="card">
-    <p class="eyebrow">{{ 'Задание 2 · После входа' if private else 'Задание 1 · Открытый доступ' }}</p>
+    <p class="eyebrow">{{ 'После входа' if private else 'Открытый доступ' }}</p>
     <h1>Ваш код</h1>
-    <div class="code" aria-label="Четырёхзначный код">{{ code }}</div>
-    <p class="hint">{{ 'Обновите страницу, чтобы выйти.' if private else 'Обновите страницу, чтобы получить новый случайный код.' }}</p>
+    <div class="code" id="code" aria-label="Четырёхзначный код" aria-live="polite">{{ code }}</div>
+    {% if private %}
+    <p class="hint">Обновите страницу, чтобы выйти.</p>
+    {% else %}
+    <p class="hint">Нажмите кнопку, чтобы получить новый случайный код.</p>
+    <button type="button" id="refresh-code" data-url="{{ url_for('api_code') }}">Обновить код</button>
+    <p class="error" id="refresh-error" role="alert" hidden>Не удалось обновить код. Попробуйте ещё раз.</p>
+    <script src="{{ url_for('static', filename='public-code.js') }}" defer></script>
+    {% endif %}
     <nav><a href="{{ url_for('public_code') }}">Открытая страница</a><a href="{{ url_for('private_code') }}">Страница с входом</a></nav>
   </main>
 </body>

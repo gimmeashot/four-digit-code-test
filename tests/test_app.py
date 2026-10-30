@@ -23,6 +23,16 @@ class CodeServiceTests(unittest.TestCase):
         self.assertNotEqual(extract_code(first), extract_code(second))
         self.assertIn("no-store", second.headers["Cache-Control"])
 
+    def test_public_button_requests_new_code(self):
+        page = self.client.get("/")
+        self.assertIn("Обновить код".encode(), page.data)
+        self.assertNotIn("Задание".encode(), page.data)
+        refreshed = self.client.post("/api/code")
+        self.assertEqual(refreshed.status_code, 200)
+        self.assertRegex(refreshed.json["code"], r"^\d{4}$")
+        self.assertNotEqual(extract_code(page), refreshed.json["code"])
+        self.assertIn("no-store", refreshed.headers["Cache-Control"])
+
     def test_leading_zeroes_are_kept(self):
         with patch("app.secrets.randbelow", return_value=42):
             self.assertEqual(new_code(), "0042")
