@@ -83,7 +83,7 @@ def private_code():
                 429,
                 {"Retry-After": "60"},
             )
-        username = os.environ.get("APP_USERNAME", "demo")
+        username = os.environ.get("APP_USERNAME", "test")
         password = os.environ.get("APP_PASSWORD")
         valid = bool(password) and hmac.compare_digest(
             request.form.get("username", "").encode(), username.encode()

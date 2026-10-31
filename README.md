@@ -1,7 +1,7 @@
 # Генератор кода
 
-[Открыть сервис](https://four-digit-code-demo.onrender.com/)
+[Открыть сервис](https://four-digit-code.onrender.com/)
 
 Python + Flask. В меню доступны открытый код и код после входа. Открытый код обновляется кнопкой, защищённый требует повторного входа после обновления страницы.
 
-Локально: `pip install -r requirements.txt`, задайте `APP_PASSWORD` и запустите `python app.py`. Логин по умолчанию — `demo`.
+Локально: `pip install -r requirements.txt`, задайте `APP_PASSWORD` и запустите `python app.py`. Логин по умолчанию — `test`.

@@ -54,13 +54,13 @@ class CodeServiceTests(unittest.TestCase):
             self.assertEqual(new_code(), "0042")
 
     def test_private_code_requires_login_and_refresh_logs_out(self):
-        with patch.dict(os.environ, {"APP_USERNAME": "demo", "APP_PASSWORD": "test-pass"}):
+        with patch.dict(os.environ, {"APP_USERNAME": "test", "APP_PASSWORD": "test-pass"}):
             self.assertIsNone(extract_code(self.client.get("/private")))
-            denied = self.client.post("/private", data={"username": "demo", "password": "wrong"})
+            denied = self.client.post("/private", data={"username": "test", "password": "wrong"})
             self.assertEqual(denied.status_code, 401)
             self.assertIsNone(extract_code(denied))
 
-            login = self.client.post("/private", data={"username": "demo", "password": "test-pass"})
+            login = self.client.post("/private", data={"username": "test", "password": "test-pass"})
             self.assertEqual(login.status_code, 303)
             shown = self.client.get(login.headers["Location"])
             self.assertRegex(extract_code(shown), r"^\d{4}$")
@@ -72,8 +72,8 @@ class CodeServiceTests(unittest.TestCase):
             self.assertIn("Вход".encode(), refreshed.data)
 
     def test_logout_button_returns_to_login(self):
-        with patch.dict(os.environ, {"APP_USERNAME": "demo", "APP_PASSWORD": "test-pass"}):
-            self.client.post("/private", data={"username": "demo", "password": "test-pass"})
+        with patch.dict(os.environ, {"APP_USERNAME": "test", "APP_PASSWORD": "test-pass"}):
+            self.client.post("/private", data={"username": "test", "password": "test-pass"})
             self.client.get("/private")
             result = self.client.post("/logout", follow_redirects=True)
             self.assertEqual(result.status_code, 200)
@@ -82,8 +82,8 @@ class CodeServiceTests(unittest.TestCase):
             self.assertIsNone(extract_code(self.client.get("/private")))
 
     def test_saved_login_cookie_cannot_reopen_code(self):
-        with patch.dict(os.environ, {"APP_USERNAME": "demo", "APP_PASSWORD": "test-pass"}):
-            self.client.post("/private", data={"username": "demo", "password": "test-pass"})
+        with patch.dict(os.environ, {"APP_USERNAME": "test", "APP_PASSWORD": "test-pass"}):
+            self.client.post("/private", data={"username": "test", "password": "test-pass"})
             saved_cookie = self.client.get_cookie("session").value
             self.assertIsNotNone(extract_code(self.client.get("/private")))
 
@@ -91,54 +91,54 @@ class CodeServiceTests(unittest.TestCase):
             replay.set_cookie("session", saved_cookie)
             self.assertIsNone(extract_code(replay.get("/private")))
 
-            self.client.post("/private", data={"username": "demo", "password": "test-pass"})
+            self.client.post("/private", data={"username": "test", "password": "test-pass"})
             pending_cookie = self.client.get_cookie("session").value
             self.client.post("/logout")
             replay.set_cookie("session", pending_cookie)
             self.assertIsNone(extract_code(replay.get("/private")))
 
     def test_login_attempts_are_limited(self):
-        with patch.dict(os.environ, {"APP_USERNAME": "demo", "APP_PASSWORD": "test-pass"}):
+        with patch.dict(os.environ, {"APP_USERNAME": "test", "APP_PASSWORD": "test-pass"}):
             with patch("security_store.time.time", return_value=1000):
                 for _ in range(10):
-                    response = self.client.post("/private", data={"username": "demo", "password": "wrong"})
+                    response = self.client.post("/private", data={"username": "test", "password": "wrong"})
                     self.assertEqual(response.status_code, 401)
-                blocked = self.client.post("/private", data={"username": "demo", "password": "test-pass"})
+                blocked = self.client.post("/private", data={"username": "test", "password": "test-pass"})
                 self.assertEqual(blocked.status_code, 429)
                 self.assertEqual(blocked.headers["Retry-After"], "60")
 
             with patch("security_store.time.time", return_value=1061):
-                allowed = self.client.post("/private", data={"username": "demo", "password": "test-pass"})
+                allowed = self.client.post("/private", data={"username": "test", "password": "test-pass"})
                 self.assertEqual(allowed.status_code, 303)
 
     def test_one_client_cannot_block_another_client(self):
-        with patch.dict(os.environ, {"APP_USERNAME": "demo", "APP_PASSWORD": "test-pass", "RENDER": "true"}):
+        with patch.dict(os.environ, {"APP_USERNAME": "test", "APP_PASSWORD": "test-pass", "RENDER": "true"}):
             attacker = app.test_client()
             visitor = app.test_client()
             for _ in range(10):
                 response = attacker.post(
                     "/private",
-                    data={"username": "demo", "password": "wrong"},
+                    data={"username": "test", "password": "wrong"},
                     headers={"CF-Connecting-IP": "198.51.100.10"},
                 )
                 self.assertEqual(response.status_code, 401)
             blocked = attacker.post(
                 "/private",
-                data={"username": "demo", "password": "test-pass"},
+                data={"username": "test", "password": "test-pass"},
                 headers={"CF-Connecting-IP": "198.51.100.10"},
             )
             self.assertEqual(blocked.status_code, 429)
             allowed = visitor.post(
                 "/private",
-                data={"username": "demo", "password": "test-pass"},
+                data={"username": "test", "password": "test-pass"},
                 headers={"CF-Connecting-IP": "198.51.100.11"},
             )
             self.assertEqual(allowed.status_code, 303)
 
     def test_private_code_is_not_stored_in_cookie(self):
-        with patch.dict(os.environ, {"APP_USERNAME": "demo", "APP_PASSWORD": "test-pass"}):
+        with patch.dict(os.environ, {"APP_USERNAME": "test", "APP_PASSWORD": "test-pass"}):
             self.client.get("/public")
-            self.client.post("/private", data={"username": "demo", "password": "test-pass"})
+            self.client.post("/private", data={"username": "test", "password": "test-pass"})
             shown = self.client.get("/private")
             code = extract_code(shown)
             cookie = self.client.get_cookie("session").value
@@ -153,8 +153,8 @@ class CodeServiceTests(unittest.TestCase):
             self.assertNotIn("last_private_code", contents)
 
     def test_non_ascii_login_input_does_not_crash(self):
-        with patch.dict(os.environ, {"APP_USERNAME": "demo", "APP_PASSWORD": "test-pass"}):
-            for username, password in [("тест", "x"), ("demo", "пароль")]:
+        with patch.dict(os.environ, {"APP_USERNAME": "test", "APP_PASSWORD": "test-pass"}):
+            for username, password in [("тест", "x"), ("test", "пароль")]:
                 response = self.client.post("/private", data={"username": username, "password": password})
                 self.assertEqual(response.status_code, 401)
 
